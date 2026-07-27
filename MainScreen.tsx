@@ -24,6 +24,34 @@ const CARD_LOGOS = {
     troy: require('./assets/troy.png'),
 } as const;
 
+const CARD_BACKGROUNDS = [
+    require('./assets/1.jpeg'),
+    require('./assets/2.jpeg'),
+    require('./assets/3.jpeg'),
+    require('./assets/4.jpeg'),
+    require('./assets/5.jpeg'),
+    require('./assets/6.jpeg'),
+    require('./assets/7.jpeg'),
+    require('./assets/8.jpeg'),
+    require('./assets/9.jpeg'),
+    require('./assets/10.jpeg'),
+    require('./assets/11.jpeg'),
+    require('./assets/12.jpeg'),
+    require('./assets/13.jpeg'),
+    require('./assets/14.jpeg'),
+    require('./assets/15.jpeg'),
+    require('./assets/16.jpeg'),
+    require('./assets/17.jpeg'),
+    require('./assets/18.jpeg'),
+    require('./assets/19.jpeg'),
+    require('./assets/20.jpeg'),
+    require('./assets/21.jpeg'),
+    require('./assets/22.jpeg'),
+    require('./assets/23.jpeg'),
+    require('./assets/24.jpeg'),
+    require('./assets/25.jpeg'),
+] as const;
+
 type CardType = keyof typeof CARD_LOGOS;
 
 const detectCardType = (cardNumber: string): CardType => {
@@ -48,6 +76,34 @@ const formatCardNumber = (cardNumber: string, cardType: CardType) => {
     return paddedNumber.replace(/(.{4})/g, '$1 ').trim();
 };
 
+const formatCardNumberInput = (cardNumber: string, cardType: CardType) => {
+    // Removes letters and adds spaces to the card number input
+    const digits = cardNumber
+        .replace(/\D/g, '')
+        .slice(0, cardType === 'amex' ? 15 : 16);
+
+    if (cardType === 'amex') {
+        const parts = [digits.slice(0, 4), digits.slice(4, 10), digits.slice(10, 15)].filter(Boolean);
+        return parts.join(' ');
+    }
+
+    return digits.match(/.{1,4}/g)?.join(' ') ?? '';
+};
+
+const getRandomCardBackground = () => {
+    const randomIndex = Math.floor(Math.random() * CARD_BACKGROUNDS.length);
+    return CARD_BACKGROUNDS[randomIndex];
+};
+
+const preloadCardBackgrounds = async () => {
+    const preloadTasks = CARD_BACKGROUNDS
+        .map(background => Image.resolveAssetSource(background)?.uri)
+        .filter((uri): uri is string => Boolean(uri))
+        .map(uri => Image.prefetch(uri));
+
+    await Promise.all(preloadTasks);
+};
+
 
 export default function MainScreen() {
     const [focusedField, setFocusedField] = React.useState<string | null>(null);
@@ -61,14 +117,16 @@ export default function MainScreen() {
     const [cardHolder, setCardHolder] = React.useState('');
     const [cardHolderFormatted, setCardHolderFormatted] = React.useState('FULL NAME');
     const [cardType, setCardType] = React.useState<CardType>('visa');
+    const [cardBackground, setCardBackground] = React.useState(getRandomCardBackground());
 
     const handleCardNumberChange = (text: string) => {
         const cleanedText = text.replace(/\D/g, '');
         const detectedType = detectCardType(cleanedText);
+        const normalizedNumber = cleanedText.slice(0, detectedType === 'amex' ? 15 : 16);
 
-        setCardNumber(cleanedText);
+        setCardNumber(normalizedNumber);
         setCardType(detectedType);
-        setFormattedCardNumber(formatCardNumber(cleanedText, detectedType));
+        setFormattedCardNumber(formatCardNumber(normalizedNumber, detectedType));
 
     }
 
@@ -85,6 +143,10 @@ export default function MainScreen() {
     React.useEffect(() => {
         const frame = requestAnimationFrame(() => {
             setWarmupMenuVisible(false);
+        });
+
+        preloadCardBackgrounds().catch(() => {
+            // Ignore preload failures
         });
 
         return () => cancelAnimationFrame(frame);
@@ -116,6 +178,7 @@ export default function MainScreen() {
         setYear('');
         setCvv('');
         setCardType('visa');
+        setCardBackground(getRandomCardBackground());
     }
 
 
@@ -151,7 +214,7 @@ export default function MainScreen() {
 
                 <Animated.View style={[styles.cardFrontFace, frontStyle]}>
                     <Image
-                        source={require('./assets/25.jpeg')}
+                        source={cardBackground}
                         style={styles.cardImage}
                     />
                     <Animated.View style={styles.cardFrontFaceContent}>
@@ -225,7 +288,7 @@ export default function MainScreen() {
                 
                 <Animated.View style={[styles.cardBackFace, backStyle]}>
                     <Image
-                        source={require('./assets/25.jpeg')}
+                        source={cardBackground}
                         style={styles.cardImage}
                     />
                     <Animated.View style={styles.cardBackFaceContent}>
@@ -267,9 +330,10 @@ export default function MainScreen() {
                         onFocus={() => setFocusedField('cardNumber')}
                         onBlur={() => setFocusedField(null)}
                         onChangeText={handleCardNumberChange}
-                        value={cardNumber}
+                        value={formatCardNumberInput(cardNumber, cardType)}
+                        keyboardType="number-pad"
                         autoComplete='off'
-                        maxLength={16}
+                        maxLength={cardType === 'amex' ? 17 : 19}
                         style={[
                             styles.textInput,
                             focusedField === 'cardNumber' && styles.inputFocused,
