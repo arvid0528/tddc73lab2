@@ -66,6 +66,7 @@ const detectCardType = (cardNumber: string): CardType => {
     return 'visa';
 };
 
+// Adds pound symbols and spaces to the displayed card number 
 const formatCardNumber = (cardNumber: string, cardType: CardType) => {
     if (cardType === 'amex') {
         const paddedNumber = cardNumber.slice(0, 15).padEnd(15, '#');
@@ -76,6 +77,7 @@ const formatCardNumber = (cardNumber: string, cardType: CardType) => {
     return paddedNumber.replace(/(.{4})/g, '$1 ').trim();
 };
 
+// Formats the card number input text field
 const formatCardNumberInput = (cardNumber: string, cardType: CardType) => {
     // Removes letters and adds spaces to the card number input
     const digits = cardNumber
@@ -83,6 +85,7 @@ const formatCardNumberInput = (cardNumber: string, cardType: CardType) => {
         .slice(0, cardType === 'amex' ? 15 : 16);
 
     if (cardType === 'amex') {
+        // Format as 4-6-5 for Amex
         const parts = [digits.slice(0, 4), digits.slice(4, 10), digits.slice(10, 15)].filter(Boolean);
         return parts.join(' ');
     }
@@ -90,11 +93,13 @@ const formatCardNumberInput = (cardNumber: string, cardType: CardType) => {
     return digits.match(/.{1,4}/g)?.join(' ') ?? '';
 };
 
+
 const getRandomCardBackground = () => {
     const randomIndex = Math.floor(Math.random() * CARD_BACKGROUNDS.length);
     return CARD_BACKGROUNDS[randomIndex];
 };
 
+// Preload card backgrounds for faster load times
 const preloadCardBackgrounds = async () => {
     const preloadTasks = CARD_BACKGROUNDS
         .map(background => Image.resolveAssetSource(background)?.uri)
@@ -119,6 +124,7 @@ export default function MainScreen() {
     const [cardType, setCardType] = React.useState<CardType>('visa');
     const [cardBackground, setCardBackground] = React.useState(getRandomCardBackground());
 
+    // Input changes to card number input
     const handleCardNumberChange = (text: string) => {
         const cleanedText = text.replace(/\D/g, '');
         const detectedType = detectCardType(cleanedText);
@@ -130,6 +136,7 @@ export default function MainScreen() {
 
     }
 
+    // Input changes to card holder
     const handleCardHolderChange = (text: string) => {
         setCardHolder(text);
         if (text === '') {
@@ -152,6 +159,7 @@ export default function MainScreen() {
         return () => cancelAnimationFrame(frame);
     }, []);
 
+    // Only one meny can be open at once
     const showMenu = (menu: 'month' | 'year') => {
         setOpenMenu(null);
         requestAnimationFrame(() => {
@@ -159,11 +167,13 @@ export default function MainScreen() {
         });
     };
 
+    // Flip to back of card
     const focusCvv = () => {
         setFocusedField('cvv');
         flip.value = withTiming(1, { duration: 500 });
     }
 
+    // Flip to front of card
     const unfocusCvv = () => {
         setFocusedField(null);
         flip.value = withTiming(0, { duration: 500 });
@@ -186,6 +196,7 @@ export default function MainScreen() {
     // 0 = front, 1 = back
     const flip = useSharedValue(0); 
 
+    // Animated styles for front of card
     const frontStyle = useAnimatedStyle(() => ({
         transform: [
             { perspective: 1000 },
@@ -193,6 +204,7 @@ export default function MainScreen() {
         ],
     }));
 
+    // Animated styles for back of card
     const backStyle = useAnimatedStyle(() => ({
         transform: [
             { perspective: 1000 },
@@ -202,6 +214,7 @@ export default function MainScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
+            {/* Invisible warmup menu to make menus load faster on startup */}
             <Menu
                 visible={warmupMenuVisible}
                 onDismiss={() => setWarmupMenuVisible(false)}
