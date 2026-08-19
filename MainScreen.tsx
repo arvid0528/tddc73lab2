@@ -277,7 +277,7 @@ export default function MainScreen() {
                                     {cardHolderFormatted.split('').map((char, index) => {
                                         return (
                                                 <Animated.Text
-                                                    key={'cardHolderChar-'+index}
+                                                    key={'cardHolderChar-'+index+'-'+char}
                                                     entering={FlipInYRight.duration(300)}
                                                     exiting={FlipOutYLeft.duration(300)}
                                                     style={styles.cardCardHolderName}
@@ -657,6 +657,7 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         width: '90%',
         marginRight: '5%',
+        color: '#000',
     },
     dateCvvRow: {
         flexDirection: 'row',
